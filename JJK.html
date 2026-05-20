@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>JJK — Cursed Technique</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Noto+Sans+JP:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+  <script type="importmap">
+    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+
+  <style>
+    :root {
+      --red:    #ff2233;
+      --cyan:   #00e5ff;
+      --purple: #bb44ff;
+      --white:  #e8e8f0;
+      --dim:    rgba(255,255,255,0.12);
+      --panel-bg: rgba(4,4,12,0.82);
+      --border: rgba(255,255,255,0.07);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #000;
+      color: var(--white);
+      font-family: 'Share Tech Mono', monospace;
+      overflow: hidden;
+      width: 100vw; height: 100vh;
+    }
+
+    /* ── CANVAS ── */
+    #three-canvas {
+      position: fixed; inset: 0; z-index: 0;
+    }
+
+    /* ── GRAIN ── */
+    #grain {
+      position: fixed; inset: 0; z-index: 1; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+    }
+
+    /* ── LAYOUT SHELL ── */
+    #app {
+      position: fixed; inset: 0; z-index: 2;
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      grid-template-rows: auto 1fr auto;
+      gap: 0;
+      pointer-events: none;
+    }
+
+    /* ── HEADER ── */
+    #header {
+      grid-column: 1 / 2;
+      grid-row: 1;
+      padding: 22px 28px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .kanji {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-weight: 700;
+      font-size: clamp(1.5rem, 4vw, 2.6rem);
+      letter-spacing: 0.18em;
+      background: linear-gradient(135deg, #fff 0%, #888 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+    }
+
+    .subtitle {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(0.45rem, 1.2vw, 0.7rem);
+      letter-spacing: 0.35em;
+      color: rgba(255,255,255,0.35);
+      text-transform: uppercase;
+    }
+
+    /* ── TECHNIQUE BADGE ── */
+    #badge-wrap {
+      grid-column: 1 / 2;
+      grid-row: 2;
+      display: flex;
+      align-items: flex-end;
+      padding: 0 28px 28px;
+      pointer-events: none;
+    }
+
+    #technique-badge {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    #tech-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.3em;
+      color: rgba(255,255,255,0.3);
+      text-transform: uppercase;
+    }
+
+    #technique-name {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(0.7rem, 1.8vw, 1.1rem);
+      letter-spacing: 0.1em;
+      color: var(--cyan);
+      text-shadow: 0 0 20px currentColor;
+      transition: color 0.5s, text-shadow 0.5s;
+      line-height: 1.3;
+      max-width: 420px;
+    }
+
+    #status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 10px var(--cyan);
+      display: inline-block;
+      margin-right: 8px;
+      animation: pulse 2s infinite;
+      transition: background 0.5s, box-shadow 0.5s;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ── RIGHT PANEL ── */
+    #side-panel {
+      grid-column: 2;
+      grid-row: 1 / 4;
+      background: var(--panel-bg);
+      border-left: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      pointer-events: auto;
+    }
+
+    .panel-header {
+      padding: 22px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .panel-header svg {
+      opacity: 0.5;
+      flex-shrink: 0;
+    }
+
+    .panel-title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.3em;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+    }
+
+    /* ── GESTURE CARDS ── */
+    .gesture-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 14px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      scrollbar-width: none;
+    }
+    .gesture-list::-webkit-scrollbar { display: none; }
+
+    .gesture-card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      background: rgba(255,255,255,0.025);
+      transition: border-color 0.35s, background 0.35s, box-shadow 0.35s;
+      cursor: default;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .gesture-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.4s;
+      border-radius: inherit;
+    }
+
+    .gesture-card.active {
+      background: rgba(255,255,255,0.06);
+      box-shadow: 0 0 20px -6px var(--card-color);
+      border-color: var(--card-color);
+    }
+
+    .gesture-card.active::before { opacity: 0.06; background: var(--card-color); }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    /* Hand SVG icon */
+    .hand-icon {
+      width: 48px;
+      height: 52px;
+      flex-shrink: 0;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+    }
+
+    .hand-icon svg {
+      width: 100%; height: 100%;
+    }
+
+    .card-info { flex: 1; }
+
+    .card-technique {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.06em;
+      line-height: 1.3;
+      margin-bottom: 3px;
+    }
+
+    .card-kanji {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 0.6rem;
+      color: rgba(255,255,255,0.28);
+      letter-spacing: 0.15em;
+    }
+
+    .card-divider {
+      height: 1px;
+      background: var(--border);
+      margin-bottom: 9px;
+    }
+
+    .card-gesture-label {
+      font-size: 0.52rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 4px;
+    }
+
+    .card-gesture-desc {
+      font-size: 0.68rem;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.5;
+    }
+
+    .card-effect-label {
+      font-size: 0.52rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      margin-top: 8px;
+      margin-bottom: 4px;
+    }
+
+    .card-effect-desc {
+      font-size: 0.68rem;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.5;
+    }
+
+    /* ── CAMERA FEED ── */
+    #cam-wrap {
+      grid-column: 1;
+      grid-row: 3;
+      display: flex;
+      justify-content: flex-start;
+      align-items: flex-end;
+      padding: 0 0 20px 20px;
+      pointer-events: none;
+    }
+
+    #video-container {
+      width: clamp(140px, 22vw, 220px);
+      aspect-ratio: 4/3;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.15);
+      position: relative;
+      background: #000;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+      transform: scaleX(-1);
+    }
+
+    #video-container::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .cam-corner {
+      position: absolute;
+      width: 12px; height: 12px;
+      border-color: var(--cyan);
+      border-style: solid;
+      z-index: 3;
+      transition: border-color 0.4s;
+    }
+    .cam-corner.tl { top: 6px; left: 6px;  border-width: 1.5px 0 0 1.5px; }
+    .cam-corner.tr { top: 6px; right: 6px; border-width: 1.5px 1.5px 0 0; }
+    .cam-corner.bl { bottom: 6px; left: 6px;  border-width: 0 0 1.5px 1.5px; }
+    .cam-corner.br { bottom: 6px; right: 6px; border-width: 0 1.5px 1.5px 0; }
+
+    .input_video { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; display: block; }
+    #output_canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+
+    .cam-label {
+      position: absolute;
+      bottom: 7px;
+      left: 50%;
+      transform: translateX(50%) scaleX(-1);
+      font-size: 0.48rem;
+      letter-spacing: 0.2em;
+      color: rgba(255,255,255,0.3);
+      z-index: 4;
+      white-space: nowrap;
+    }
+
+    /* ── WATERMARKS ── */
+    #watermarks {
+      padding: 14px 16px 18px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      pointer-events: auto;
+    }
+
+    .wm-link {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      text-decoration: none;
+      color: rgba(255,255,255,0.35);
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      transition: color 0.25s;
+      font-family: 'Share Tech Mono', monospace;
+    }
+
+    .wm-link:hover { color: var(--cyan); }
+
+    .wm-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      flex-shrink: 0;
+      transition: background 0.25s;
+    }
+    .wm-link:hover .wm-dot { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+
+    /* ── MOBILE PANEL TOGGLE ── */
+    #panel-toggle {
+      display: none;
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 100;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 38px; height: 38px;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      pointer-events: auto;
+      color: rgba(255,255,255,0.6);
+    }
+
+    /* ── MOBILE ── */
+    @media (max-width: 680px) {
+      #app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
+      }
+
+      #side-panel {
+        grid-column: 1;
+        grid-row: 1 / 4;
+        position: fixed;
+        top: 0; right: 0;
+        width: min(88vw, 310px);
+        height: 100vh;
+        z-index: 50;
+        transform: translateX(110%);
+        transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+        border-left: 1px solid var(--border);
+      }
+
+      #side-panel.open { transform: translateX(0); }
+
+      #panel-toggle { display: flex; }
+
+      #header { grid-column: 1; }
+      #badge-wrap { grid-column: 1; }
+      #cam-wrap { grid-column: 1; padding: 0 0 70px 14px; }
+
+      .kanji { font-size: 1.6rem; }
+
+      #video-container { width: clamp(110px, 36vw, 170px); }
+    }
+
+    /* ── ACTIVE STATE COLORS per technique ── */
+    body[data-tech="red"]    { --active: var(--red); }
+    body[data-tech="void"]   { --active: var(--cyan); }
+    body[data-tech="purple"] { --active: var(--purple); }
+    body[data-tech="shrine"] { --active: var(--red); }
+
+    /* ── SCANLINE FLASH on technique change ── */
+    #flash {
+      position: fixed; inset: 0; z-index: 200;
+      pointer-events: none;
+      background: linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%);
+      opacity: 0;
+    }
+
+    @keyframes scanFlash {
+      0%   { opacity: 0; transform: translateY(-100%); }
+      30%  { opacity: 1; }
+      100% { opacity: 0; transform: translateY(100%); }
+    }
+
+    .flash-anim { animation: scanFlash 0.5s ease-out forwards; }
+  </style>
+</head>
+<body data-tech="neutral">
+
+<div id="grain"></div>
+<canvas id="three-canvas"></canvas>
+<div id="flash"></div>
+
+<!-- Mobile toggle -->
+<button id="panel-toggle" aria-label="Toggle gesture guide" onclick="togglePanel()">
+  <svg width="18" height="14" viewBox="0 0 18 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="18" height="1.5" rx="0.75" fill="currentColor"/>
+    <rect y="6" width="12" height="1.5" rx="0.75" fill="currentColor"/>
+    <rect y="12" width="8" height="1.5" rx="0.75" fill="currentColor"/>
+  </svg>
+</button>
+
+<!-- Main layout -->
+<div id="app">
+
+  <!-- Header -->
+  <div id="header">
+    <div class="kanji">呪術廻戦</div>
+    <div class="subtitle">Cursed Technique &nbsp;·&nbsp; Hand Tracking Engine</div>
+  </div>
+
+  <!-- Technique badge -->
+  <div id="badge-wrap">
+    <div id="technique-badge">
+      <div id="tech-label">
+        <span id="status-dot"></span>ACTIVE TECHNIQUE
+      </div>
+      <div id="technique-name">CURSED ENERGY — NEUTRAL STATE</div>
+    </div>
+  </div>
+
+  <!-- Camera -->
+  <div id="cam-wrap">
+    <div id="video-container">
+      <div class="cam-corner tl"></div>
+      <div class="cam-corner tr"></div>
+      <div class="cam-corner bl"></div>
+      <div class="cam-corner br"></div>
+      <video class="input_video" playsinline></video>
+      <canvas id="output_canvas"></canvas>
+      <span class="cam-label">LIVE</span>
+    </div>
+  </div>
+
+  <!-- Right panel -->
+  <aside id="side-panel">
+    <div class="panel-header">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 1L7 13M1 7L13 7" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      <div class="panel-title">Gesture Guide</div>
+    </div>
+
+    <div class="gesture-list">
+
+      <!-- RED -->
+      <div class="gesture-card" id="card-red" style="--card-color: var(--red)">
+        <div class="card-top">
+          <div class="hand-icon">
+            <!-- Index finger up only -->
+            <svg viewBox="0 0 40 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Palm -->
+              <rect x="10" y="28" width="20" height="20" rx="5" fill="rgba(255,34,51,0.18)" stroke="#ff2233" stroke-width="1.2"/>
+              <!-- Index finger UP -->
+              <rect x="16" y="6" width="7" height="24" rx="3.5" fill="#ff2233" opacity="0.9"/>
+              <!-- Middle finger DOWN (tucked) -->
+              <rect x="24" y="24" width="6" height="10" rx="3" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+              <!-- Ring finger DOWN -->
+              <rect x="10" y="26" width="5" height="8" rx="2.5" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+              <!-- Pinky DOWN -->
+              <rect x="30" y="27" width="4" height="7" rx="2" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+              <!-- Arrow up -->
+              <path d="M19.5 2L23 7H16L19.5 2Z" fill="#ff2233" opacity="0.7"/>
+            </svg>
+          </div>
+          <div class="card-info">
+            <div class="card-technique" style="color:#ff2233">Reverse Cursed Technique<br>RED</div>
+            <div class="card-kanji">赤 — 術式反転</div>
+          </div>
+        </div>
+        <div class="card-divider"></div>
+        <div class="card-gesture-label">Hand Pose</div>
+        <div class="card-gesture-desc">Point your <strong style="color:rgba(255,255,255,0.75)">index finger up</strong> — all other fingers curled down into a fist.</div>
+        <div class="card-effect-label">Visual Effect</div>
+        <div class="card-effect-desc">Red spiral arms spin outward at high speed. Core glows with intense red bloom.</div>
+      </div>
+
+      <!-- VOID -->
+      <div class="gesture-card" id="card-void" style="--card-color: var(--cyan)">
+        <div class="card-top">
+          <div class="hand-icon">
+            <svg viewBox="0 0 40 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="10" y="28" width="20" height="20" rx="5" fill="rgba(0,229,255,0.12)" stroke="#00e5ff" stroke-width="1.2"/>
+              <!-- Index UP -->
+              <rect x="16" y="6" width="7" height="24" rx="3.5" fill="#00e5ff" opacity="0.9"/>
+              <!-- Middle UP -->
+              <rect x="24" y="8" width="6" height="22" rx="3" fill="#00e5ff" opacity="0.75"/>
+              <!-- Ring DOWN -->
+              <rect x="10" y="26" width="5" height="8" rx="2.5" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+              <!-- Pinky DOWN -->
+              <rect x="30" y="27" width="4" height="7" rx="2" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+            </svg>
+          </div>
+          <div class="card-info">
+            <div class="card-technique" style="color:#00e5ff">Domain Expansion<br>INFINITE VOID</div>
+            <div class="card-kanji">無量空処 — 領域展開</div>
+          </div>
+        </div>
+        <div class="card-divider"></div>
+        <div class="card-gesture-label">Hand Pose</div>
+        <div class="card-gesture-desc">Raise <strong style="color:rgba(255,255,255,0.75)">index + middle fingers</strong> up (peace sign). Ring and pinky stay curled.</div>
+        <div class="card-effect-label">Visual Effect</div>
+        <div class="card-effect-desc">White ring expands outward. Blue particle cloud fills infinite space around it.</div>
+      </div>
+
+      <!-- PURPLE -->
+      <div class="gesture-card" id="card-purple" style="--card-color: var(--purple)">
+        <div class="card-top">
+          <div class="hand-icon">
+            <svg viewBox="0 0 40 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="10" y="28" width="20" height="20" rx="5" fill="rgba(187,68,255,0.15)" stroke="#bb44ff" stroke-width="1.2"/>
+              <!-- Index tip -->
+              <rect x="16" y="14" width="7" height="16" rx="3.5" fill="#bb44ff" opacity="0.7"/>
+              <!-- Thumb -->
+              <rect x="5" y="22" width="12" height="6" rx="3" fill="#bb44ff" opacity="0.7"/>
+              <!-- Pinch circle -->
+              <circle cx="19" cy="20" r="4" fill="none" stroke="#bb44ff" stroke-width="1.5" opacity="0.8"/>
+              <circle cx="19" cy="20" r="1.5" fill="#bb44ff"/>
+              <!-- Other fingers DOWN -->
+              <rect x="24" y="24" width="6" height="10" rx="3" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+              <rect x="30" y="27" width="4" height="7" rx="2" fill="rgba(255,255,255,0.08)"/>
+            </svg>
+          </div>
+          <div class="card-info">
+            <div class="card-technique" style="color:#bb44ff">Secret Technique<br>HOLLOW PURPLE</div>
+            <div class="card-kanji">虚式「茈」— 秘伝</div>
+          </div>
+        </div>
+        <div class="card-divider"></div>
+        <div class="card-gesture-label">Hand Pose</div>
+        <div class="card-gesture-desc"><strong style="color:rgba(255,255,255,0.75)">Pinch</strong> — bring your index fingertip and thumb tip close together (within ~4cm).</div>
+        <div class="card-effect-label">Visual Effect</div>
+        <div class="card-effect-desc">Purple sphere pulses and rotates with maximum bloom. Particles scatter chaotically.</div>
+      </div>
+
+      <!-- SHRINE -->
+      <div class="gesture-card" id="card-shrine" style="--card-color: #cc0011">
+        <div class="card-top">
+          <div class="hand-icon">
+            <svg viewBox="0 0 40 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="10" y="28" width="20" height="20" rx="5" fill="rgba(200,0,17,0.15)" stroke="#cc0011" stroke-width="1.2"/>
+              <!-- All 4 fingers UP -->
+              <rect x="16" y="5"  width="6" height="24" rx="3" fill="#cc0011" opacity="0.9"/>
+              <rect x="23" y="7"  width="6" height="22" rx="3" fill="#cc0011" opacity="0.78"/>
+              <rect x="10" y="9"  width="5" height="20" rx="2.5" fill="#cc0011" opacity="0.65"/>
+              <rect x="30" y="11" width="4" height="18" rx="2" fill="#cc0011" opacity="0.55"/>
+            </svg>
+          </div>
+          <div class="card-info">
+            <div class="card-technique" style="color:#ff3344">Domain Expansion<br>MALEVOLENT SHRINE</div>
+            <div class="card-kanji">伏魔御廚子 — 領域展開</div>
+          </div>
+        </div>
+        <div class="card-divider"></div>
+        <div class="card-gesture-label">Hand Pose</div>
+        <div class="card-gesture-desc">Open palm — raise <strong style="color:rgba(255,255,255,0.75)">all four fingers</strong> straight up. Thumb can be out or tucked.</div>
+        <div class="card-effect-label">Visual Effect</div>
+        <div class="card-effect-desc">Blood-red ground plane with pillars. Cursed arch stays perfectly upright. Shrine locked.</div>
+      </div>
+
+      <!-- NEUTRAL spacer -->
+      <div style="height:6px;flex-shrink:0;"></div>
+
+    </div><!-- end gesture-list -->
+
+    <!-- Watermarks -->
+    <div id="watermarks">
+      <a class="wm-link" href="https://www.instagram.com/_whois._.adii" target="_blank" rel="noopener">
+        <span class="wm-dot"></span>@_whois._.adii
+      </a>
+      <a class="wm-link" href="https://www.instagram.com/aadi.devx" target="_blank" rel="noopener">
+        <span class="wm-dot"></span>@aadi.devx
+      </a>
+    </div>
+
+  </aside>
+</div><!-- end app -->
+
+<script type="module">
+  import * as THREE from 'three';
+  import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+  import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+  import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+  // ── THREE SETUP ──
+  const canvas = document.getElementById('three-canvas');
+  const scene = new THREE.Scene();
+  const cam3 = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  cam3.position.z = 55;
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, cam3));
+  const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+  composer.addPass(bloomPass);
+
+  const COUNT = 20000;
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(COUNT * 3);
+  const col = new Float32Array(COUNT * 3);
+  const siz = new Float32Array(COUNT);
+  const tPos = new Float32Array(COUNT * 3);
+  const tCol = new Float32Array(COUNT * 3);
+  const tSiz = new Float32Array(COUNT);
+
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
+  geo.setAttribute('size',     new THREE.BufferAttribute(siz, 1));
+
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+    size: 0.3, vertexColors: true,
+    blending: THREE.AdditiveBlending, transparent: true, depthWrite: false
+  }));
+  scene.add(pts);
+
+  // ── PARTICLE SHAPES ──
+  function getRed(i) {
+    if (i < COUNT * 0.1) {
+      const r = Math.random()*9, th = Math.random()*6.28, ph = Math.acos(2*Math.random()-1);
+      return { x: r*Math.sin(ph)*Math.cos(th), y: r*Math.sin(ph)*Math.sin(th), z: r*Math.cos(ph), r:3, g:0.1, b:0.1, s:2.5 };
+    }
+    const a=3, t=i/COUNT, angle=t*15+((i%a)*(Math.PI*2/a)), rad=2+t*40;
+    return { x:rad*Math.cos(angle), y:rad*Math.sin(angle), z:(Math.random()-0.5)*10*t, r:0.8, g:0, b:0, s:1.0 };
+  }
+  function getVoid(i) {
+    if (i < COUNT*0.15) {
+      const a=Math.random()*Math.PI*2;
+      return { x:26*Math.cos(a), y:26*Math.sin(a), z:(Math.random()-0.5), r:1, g:1, b:1, s:2.5 };
+    }
+    const rad=30+Math.random()*90, th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1);
+    return { x:rad*Math.sin(ph)*Math.cos(th), y:rad*Math.sin(ph)*Math.sin(th), z:rad*Math.cos(ph), r:0.1, g:0.6, b:1, s:0.7 };
+  }
+  function getPurple(i) {
+    if (Math.random()>0.8) return { x:(Math.random()-0.5)*100, y:(Math.random()-0.5)*100, z:(Math.random()-0.5)*100, r:0.5, g:0.5, b:0.7, s:0.8 };
+    const r=20, th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1);
+    return { x:r*Math.sin(ph)*Math.cos(th), y:r*Math.sin(ph)*Math.sin(th), z:r*Math.cos(ph), r:0.6, g:0.5, b:1, s:2.5 };
+  }
+  function getShrine(i) {
+    if (i<COUNT*0.3) return { x:(Math.random()-0.5)*80, y:-15, z:(Math.random()-0.5)*80, r:0.4, g:0, b:0, s:0.8 };
+    if (i<COUNT*0.4) { const px=((i%4)<2?1:-1)*12, pz=((i%4)%2==0?1:-1)*8; return { x:px+(Math.random()-0.5)*2, y:-15+Math.random()*30, z:pz+(Math.random()-0.5)*2, r:0.2, g:0.2, b:0.2, s:0.6 }; }
+    if (i<COUNT*0.6) { const t=Math.random()*Math.PI*2, rad=Math.random()*30, c=Math.pow(rad/30,2)*10; return { x:rad*Math.cos(t), y:15-c+Math.random()*2, z:rad*Math.sin(t)*0.6, r:0.6, g:0, b:0, s:0.6 }; }
+    return { x:0, y:0, z:0, r:0, g:0, b:0, s:0 };
+  }
+
+  // ── STATE ──
+  let currentTech = 'neutral';
+  let shakeIntensity = 0;
+  let glowColor = '#00ffff';
+
+  const techNameEl = document.getElementById('technique-name');
+  const statusDot  = document.getElementById('status-dot');
+  const flash      = document.getElementById('flash');
+
+  const CARD_IDS = { red:'card-red', void:'card-void', purple:'card-purple', shrine:'card-shrine' };
+
+  const TECH_META = {
+    neutral: { name:'CURSED ENERGY — NEUTRAL STATE',  color:'#00e5ff', bloom:1.0 },
+    red:     { name:'REVERSE CURSED TECHNIQUE — RED', color:'#ff2233', bloom:2.5 },
+    void:    { name:'DOMAIN EXPANSION — INFINITE VOID', color:'#00e5ff', bloom:2.0 },
+    purple:  { name:'SECRET TECHNIQUE — HOLLOW PURPLE', color:'#bb44ff', bloom:4.0 },
+    shrine:  { name:'DOMAIN EXPANSION — MALEVOLENT SHRINE', color:'#ff2233', bloom:2.5 },
+  };
+
+  function triggerFlash() {
+    flash.classList.remove('flash-anim');
+    void flash.offsetWidth;
+    flash.classList.add('flash-anim');
+  }
+
+  function updateState(tech) {
+    if (currentTech === tech) return;
+    currentTech = tech;
+
+    const meta = TECH_META[tech];
+    techNameEl.textContent = meta.name;
+    techNameEl.style.color = meta.color;
+    techNameEl.style.textShadow = `0 0 24px ${meta.color}`;
+    statusDot.style.background = meta.color;
+    statusDot.style.boxShadow = `0 0 10px ${meta.color}`;
+    bloomPass.strength = meta.bloom;
+    glowColor = meta.color;
+    shakeIntensity = tech !== 'neutral' ? 0.4 : 0;
+    document.body.dataset.tech = tech;
+
+    // Update corner colors
+    document.querySelectorAll('.cam-corner').forEach(c => c.style.borderColor = meta.color);
+
+    // Activate card
+    document.querySelectorAll('.gesture-card').forEach(c => c.classList.remove('active'));
+    if (CARD_IDS[tech]) document.getElementById(CARD_IDS[tech]).classList.add('active');
+
+    triggerFlash();
+
+    // Update particles
+    for (let i = 0; i < COUNT; i++) {
+      let p;
+      if (tech === 'neutral') {
+        if (i < COUNT*0.05) {
+          const r=15+Math.random()*20, t=Math.random()*6.28, ph=Math.random()*3.14;
+          p = { x:r*Math.sin(ph)*Math.cos(t), y:r*Math.sin(ph)*Math.sin(t), z:r*Math.cos(ph), r:0.1, g:0.1, b:0.2, s:0.4 };
+        } else p = { x:0, y:0, z:0, r:0, g:0, b:0, s:0 };
+      }
+      else if (tech==='red')    p = getRed(i);
+      else if (tech==='void')   p = getVoid(i);
+      else if (tech==='purple') p = getPurple(i);
+      else if (tech==='shrine') p = getShrine(i);
+
+      tPos[i*3]=p.x; tPos[i*3+1]=p.y; tPos[i*3+2]=p.z;
+      tCol[i*3]=p.r; tCol[i*3+1]=p.g; tCol[i*3+2]=p.b;
+      tSiz[i]=p.s;
+    }
+  }
+
+  // ── MEDIAPIPE ──
+  const videoEl  = document.querySelector('.input_video');
+  const cvs      = document.getElementById('output_canvas');
+  const ctx      = cvs.getContext('2d');
+
+  const hands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
+  hands.setOptions({ maxNumHands:2, modelComplexity:1, minDetectionConfidence:0.7 });
+
+  hands.onResults(results => {
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+    let detected = 'neutral';
+
+    if (results.multiHandLandmarks) {
+      results.multiHandLandmarks.forEach(lm => {
+        drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: glowColor, lineWidth: 4 });
+        drawLandmarks(ctx, lm, { color:'#fff', lineWidth:1, radius:2 });
+
+        const isUp = (t,p) => lm[t].y < lm[p].y;
+        const pinch = Math.hypot(lm[8].x-lm[4].x, lm[8].y-lm[4].y);
+
+        if (pinch < 0.04) detected = 'purple';
+        else if (isUp(8,6)&&isUp(12,10)&&isUp(16,14)&&isUp(20,18)) detected = 'shrine';
+        else if (isUp(8,6)&&isUp(12,10)&&!isUp(16,14)) detected = 'void';
+        else if (isUp(8,6)&&!isUp(12,10)) detected = 'red';
+      });
+    }
+    updateState(detected);
+  });
+
+  const camUtils = new Camera(videoEl, {
+    onFrame: async () => {
+      cvs.width  = videoEl.videoWidth;
+      cvs.height = videoEl.videoHeight;
+      await hands.send({ image: videoEl });
+    }, width:640, height:480
+  });
+  camUtils.start();
+
+  // ── ANIMATION ──
+  function animate() {
+    requestAnimationFrame(animate);
+
+    if (shakeIntensity > 0) {
+      renderer.domElement.style.transform = `translate(${(Math.random()-0.5)*shakeIntensity*40}px,${(Math.random()-0.5)*shakeIntensity*40}px)`;
+    } else {
+      renderer.domElement.style.transform = 'none';
+    }
+
+    const p = pts.geometry.attributes.position.array;
+    const c = pts.geometry.attributes.color.array;
+    const s = pts.geometry.attributes.size.array;
+
+    for (let i = 0; i < COUNT*3; i++) {
+      p[i] += (tPos[i]-p[i]) * 0.1;
+      c[i] += (tCol[i]-c[i]) * 0.1;
+    }
+    for (let i = 0; i < COUNT; i++) s[i] += (tSiz[i]-s[i]) * 0.1;
+
+    pts.geometry.attributes.position.needsUpdate = true;
+    pts.geometry.attributes.color.needsUpdate    = true;
+    pts.geometry.attributes.size.needsUpdate     = true;
+
+    if      (currentTech==='red')    pts.rotation.z -= 0.1;
+    else if (currentTech==='purple') { pts.rotation.z += 0.2; pts.rotation.y += 0.05; }
+    else if (currentTech==='shrine') pts.rotation.set(0,0,0);
+    else                             pts.rotation.y += 0.005;
+
+    composer.render();
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    cam3.aspect = window.innerWidth / window.innerHeight;
+    cam3.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
+  });
+</script>
+
+<script>
+  function togglePanel() {
+    document.getElementById('side-panel').classList.toggle('open');
+  }
+</script>
+</body>
+</html>
