@@ -454,6 +454,47 @@
     }
 
     .flash-anim { animation: scanFlash 0.5s ease-out forwards; }
+    /* ── MAIN SCREEN WATERMARK ── */
+#main-watermark{
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 8px 14px;
+
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px;
+
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+
+  box-shadow: 0 0 20px rgba(0,0,0,0.4);
+}
+
+#main-watermark a{
+  color: rgba(255,255,255,0.55);
+  text-decoration: none;
+  transition: 0.25s;
+}
+
+#main-watermark a:hover{
+  color: #00e5ff;
+  text-shadow: 0 0 10px #00e5ff;
+}
+
+#main-watermark .divider{
+  color: rgba(255,255,255,0.2);
+}
   </style>
 </head>
 <body data-tech="neutral">
@@ -634,18 +675,7 @@
 
     </div><!-- end gesture-list -->
 
-    <!-- Watermarks -->
-    <div id="watermarks">
-      <a class="wm-link" href="https://www.instagram.com/_whois._.adii" target="_blank" rel="noopener">
-        <span class="wm-dot"></span>@_whois._.adii
-      </a>
-      <a class="wm-link" href="https://www.instagram.com/aadi.devx" target="_blank" rel="noopener">
-        <span class="wm-dot"></span>@aadi.devx
-      </a>
-    </div>
-
-  </aside>
-</div><!-- end app -->
+    
 
 <script type="module">
   import * as THREE from 'three';
@@ -654,7 +684,19 @@
   import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
   // ── THREE SETUP ──
-  const canvas = document.getElementById('three-canvas');
+  const canvas = document.getEle<!-- Bottom Watermark -->
+<div id="main-watermark">
+  <a href="https://www.instagram.com/_whois._.adii" target="_blank">
+    @_whois._.adii
+  </a>
+
+  <span class="divider">•</span>
+
+  <a href="https://www.instagram.com/aadi.devx" target="_blank">
+    @aadi.devx
+  </a>
+</div>
+    mentById('three-canvas');
   const scene = new THREE.Scene();
   const cam3 = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
   cam3.position.z = 55;
