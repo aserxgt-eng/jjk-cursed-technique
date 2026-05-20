@@ -455,35 +455,36 @@
 
     .flash-anim { animation: scanFlash 0.5s ease-out forwards; }
     /* ── MAIN SCREEN WATERMARK ── */
+#mai/* ── MAIN SCREEN WATERMARK ── */
 #main-watermark{
   position: fixed;
-  bottom: 14px;
-  left: 50%;
-  transform: translateX(-50%);
+
+  left: 30px;
+  bottom: 18px;
+
   z-index: 999;
 
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
 
-  padding: 8px 14px;
+  padding: 0;
 
-  background: rgba(0,0,0,0.35);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: transparent;
+  border: none;
+  box-shadow: none;
 
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 999px;
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
 
-  font-size: 0.65rem;
-  letter-spacing: 0.14em;
-
-  box-shadow: 0 0 20px rgba(0,0,0,0.4);
+  pointer-events: auto;
 }
 
 #main-watermark a{
-  color: rgba(255,255,255,0.55);
+  color: rgba(255,255,255,0.32);
   text-decoration: none;
+
   transition: 0.25s;
 }
 
@@ -493,7 +494,7 @@
 }
 
 #main-watermark .divider{
-  color: rgba(255,255,255,0.2);
+  display: none;
 }
   </style>
 </head>
@@ -683,18 +684,15 @@
   import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
   import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-  // ── THREE SETUP ──
-  const canvas = document.getEle<!-- Bottom Watermark -->
 <div id="main-watermark">
   <a href="https://www.instagram.com/_whois._.adii" target="_blank">
     @_whois._.adii
   </a>
 
-  <span class="divider">•</span>
-
   <a href="https://www.instagram.com/aadi.devx" target="_blank">
     @aadi.devx
   </a>
+</div>
 </div>
     mentById('three-canvas');
   const scene = new THREE.Scene();
