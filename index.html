@@ -381,6 +381,59 @@
     }
     .wm-link:hover .wm-dot { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
 
+    /* ── PANEL COLLAPSE BUTTON ── */
+    #panel-collapse-btn {
+      margin-left: auto;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      width: 28px; height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: rgba(255,255,255,0.4);
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+      flex-shrink: 0;
+      pointer-events: auto;
+    }
+    #panel-collapse-btn:hover {
+      color: rgba(255,255,255,0.85);
+      border-color: rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.06);
+    }
+    #panel-collapse-btn svg {
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    /* Collapsed state */
+    #side-panel.collapsed {
+      width: 44px;
+      min-width: 44px;
+      overflow: hidden;
+    }
+    #side-panel.collapsed .gesture-list,
+    #side-panel.collapsed #watermarks,
+    #side-panel.collapsed .panel-title {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #side-panel.collapsed .panel-header svg:first-child {
+      opacity: 0;
+    }
+    #side-panel.collapsed #panel-collapse-btn svg {
+      transform: rotate(180deg);
+    }
+    #side-panel {
+      transition: width 0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+    #app {
+      transition: grid-template-columns 0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+    #app.panel-hidden {
+      grid-template-columns: 1fr 44px;
+    }
+
     /* ── MOBILE PANEL TOGGLE ── */
     #panel-toggle {
       display: none;
@@ -400,226 +453,37 @@
       color: rgba(255,255,255,0.6);
     }
 
-    /* ── BOTTOM SHEET (mobile gesture guide) ── */
-    #bottom-sheet {
-      display: none;
-    }
-
-    #sheet-overlay {
-      display: none;
-    }
-
     /* ── MOBILE ── */
     @media (max-width: 680px) {
-
-      /* Kill the desktop grid layout */
       #app {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        justify-content: flex-start;
-        padding: env(safe-area-inset-top, 12px) 0 0 0;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
       }
 
-      /* ── HEADER compact ── */
-      #header {
-        grid-column: unset;
-        grid-row: unset;
-        padding: 14px 16px 8px;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0;
-      }
-
-      .kanji { font-size: 1.45rem; letter-spacing: 0.12em; }
-
-      .subtitle {
-        display: none; /* too long for mobile header */
-      }
-
-      /* ── CAMERA: hero element on mobile ── */
-      #cam-wrap {
-        grid-column: unset;
-        grid-row: unset;
-        order: 2;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 10px 16px;
-        pointer-events: none;
-        flex-shrink: 0;
-      }
-
-      #video-container {
-        width: min(90vw, 360px);
-        aspect-ratio: 4/3;
-        border-radius: 18px;
-      }
-
-      /* ── TECHNIQUE BADGE below camera ── */
-      #badge-wrap {
-        grid-column: unset;
-        grid-row: unset;
-        order: 3;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 10px 20px 6px;
-        text-align: center;
-      }
-
-      #technique-badge {
-        align-items: center;
-      }
-
-      #technique-name {
-        font-size: clamp(0.65rem, 3.5vw, 0.95rem);
-        text-align: center;
-        max-width: 90vw;
-      }
-
-      #tech-label {
-        font-size: 0.55rem;
-      }
-
-      /* ── DESKTOP side panel → hidden on mobile ── */
       #side-panel {
-        display: none !important;
-      }
-
-      /* ── PANEL TOGGLE → becomes "Guide" button at bottom ── */
-      #panel-toggle {
-        display: none; /* replaced by bottom sheet button */
-      }
-
-      /* ── BOTTOM GESTURE GUIDE BUTTON ── */
-      #guide-btn {
-        display: flex;
-        order: 4;
-        margin: 8px 16px 0;
-        padding: 13px 20px;
-        background: var(--panel-bg);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        align-items: center;
-        justify-content: space-between;
-        cursor: pointer;
-        pointer-events: auto;
-        color: rgba(255,255,255,0.5);
-        font-family: 'Cinzel Decorative', serif;
-        font-size: 0.58rem;
-        letter-spacing: 0.25em;
-        text-transform: uppercase;
-        flex-shrink: 0;
-      }
-
-      #guide-btn svg { opacity: 0.5; flex-shrink: 0; }
-
-      /* ── BOTTOM SHEET ── */
-      #sheet-overlay {
-        display: block;
+        grid-column: 1;
+        grid-row: 1 / 4;
         position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.6);
-        z-index: 60;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s;
+        top: 0; right: 0;
+        width: min(88vw, 310px);
+        height: 100vh;
+        z-index: 50;
+        transform: translateX(110%);
+        transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+        border-left: 1px solid var(--border);
       }
 
-      #sheet-overlay.open {
-        opacity: 1;
-        pointer-events: auto;
-      }
+      #side-panel.open { transform: translateX(0); }
 
-      #bottom-sheet {
-        display: flex;
-        flex-direction: column;
-        position: fixed;
-        bottom: 0; left: 0; right: 0;
-        z-index: 70;
-        background: var(--panel-bg);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        border-top: 1px solid rgba(255,255,255,0.1);
-        border-radius: 22px 22px 0 0;
-        padding-bottom: env(safe-area-inset-bottom, 16px);
-        transform: translateY(100%);
-        transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
-        max-height: 78vh;
-      }
+      #panel-toggle { display: flex; }
 
-      #bottom-sheet.open {
-        transform: translateY(0);
-      }
+      #header { grid-column: 1; }
+      #badge-wrap { grid-column: 1; }
+      #cam-wrap { grid-column: 1; padding: 0 0 70px 14px; }
 
-      #sheet-handle {
-        width: 38px; height: 4px;
-        background: rgba(255,255,255,0.18);
-        border-radius: 2px;
-        margin: 12px auto 0;
-        flex-shrink: 0;
-      }
+      .kanji { font-size: 1.6rem; }
 
-      #sheet-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 14px 20px 12px;
-        border-bottom: 1px solid var(--border);
-        flex-shrink: 0;
-      }
-
-      #sheet-title {
-        font-family: 'Cinzel Decorative', serif;
-        font-size: 0.6rem;
-        letter-spacing: 0.3em;
-        color: rgba(255,255,255,0.5);
-        text-transform: uppercase;
-      }
-
-      #sheet-close {
-        background: none;
-        border: none;
-        color: rgba(255,255,255,0.4);
-        cursor: pointer;
-        padding: 4px;
-        line-height: 0;
-      }
-
-      #sheet-list {
-        overflow-y: auto;
-        padding: 12px 14px 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        scrollbar-width: none;
-        -webkit-overflow-scrolling: touch;
-      }
-      #sheet-list::-webkit-scrollbar { display: none; }
-
-      /* Clone gesture cards into sheet — compact on mobile */
-      #sheet-list .gesture-card {
-        padding: 12px;
-      }
-
-      /* Watermark repositioning for mobile */
-      #main-watermark {
-        left: 50%;
-        transform: translateX(-50%);
-        bottom: calc(env(safe-area-inset-bottom, 8px) + 6px);
-        flex-direction: row;
-        gap: 14px;
-        font-size: 0.5rem;
-      }
-    }
-
-    /* ── Guide button hidden on desktop ── */
-    #guide-btn {
-      display: none;
+      #video-container { width: clamp(110px, 36vw, 170px); }
     }
 
     /* ── ACTIVE STATE COLORS per technique ── */
@@ -643,47 +507,6 @@
     }
 
     .flash-anim { animation: scanFlash 0.5s ease-out forwards; }
-    /* ── MAIN SCREEN WATERMARK ── */
-#main-watermark{
-  position: fixed;
-
-  left: 30px;
-  bottom: 18px;
-
-  z-index: 999;
-
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-
-  padding: 0;
-
-  background: transparent;
-  border: none;
-  box-shadow: none;
-
-  font-size: 0.58rem;
-  letter-spacing: 0.18em;
-
-  pointer-events: auto;
-}
-
-#main-watermark a{
-  color: rgba(255,255,255,0.32);
-  text-decoration: none;
-
-  transition: 0.25s;
-}
-
-#main-watermark a:hover{
-  color: #00e5ff;
-  text-shadow: 0 0 10px #00e5ff;
-}
-
-#main-watermark .divider{
-  display: none;
-}
   </style>
 </head>
 <body data-tech="neutral">
@@ -691,11 +514,6 @@
 <div id="grain"></div>
 <canvas id="three-canvas"></canvas>
 <div id="flash"></div>
-
-<div id="main-watermark">
-  <a href="https://www.instagram.com/_whois._.adii" target="_blank">@_whois._.adii</a>
-  <a href="https://www.instagram.com/aadi.devx" target="_blank">@aadi.devx</a>
-</div>
 
 <!-- Mobile toggle -->
 <button id="panel-toggle" aria-label="Toggle gesture guide" onclick="togglePanel()">
@@ -706,32 +524,13 @@
   </svg>
 </button>
 
-<!-- Mobile bottom sheet overlay -->
-<div id="sheet-overlay" onclick="closeSheet()"></div>
-
-<!-- Mobile bottom sheet -->
-<div id="bottom-sheet">
-  <div id="sheet-handle"></div>
-  <div id="sheet-header">
-    <div id="sheet-title">Gesture Guide</div>
-    <button id="sheet-close" onclick="closeSheet()" aria-label="Close">
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-        <path d="M4 4L14 14M14 4L4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
-    </button>
-  </div>
-  <div id="sheet-list">
-    <!-- Cards injected by JS -->
-  </div>
-</div>
-
 <!-- Main layout -->
 <div id="app">
 
   <!-- Header -->
   <div id="header">
     <div class="kanji">呪術廻戦</div>
-    <div class="subtitle">Cursed Technique &nbsp;·&nbsp; Hand Tracking Engine &nbsp;·&nbsp; by @_whois._.adii & @aadi.devx</div>
+    <div class="subtitle">Cursed Technique &nbsp;·&nbsp; Hand Tracking Engine</div>
   </div>
 
   <!-- Technique badge -->
@@ -743,14 +542,6 @@
       <div id="technique-name">CURSED ENERGY — NEUTRAL STATE</div>
     </div>
   </div>
-
-  <!-- Mobile gesture guide button (hidden on desktop) -->
-  <button id="guide-btn" onclick="openSheet()" aria-label="Open Gesture Guide">
-    <span>Gesture Guide</span>
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <path d="M7 11L7 3M3 7L7 3L11 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" transform="rotate(180 7 7)"/>
-    </svg>
-  </button>
 
   <!-- Camera -->
   <div id="cam-wrap">
@@ -772,6 +563,12 @@
         <path d="M7 1L7 13M1 7L13 7" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
       </svg>
       <div class="panel-title">Gesture Guide</div>
+      <button id="panel-collapse-btn" onclick="collapsePanel()" aria-label="Hide gesture guide" title="Hide panel">
+        <!-- Chevron right arrow -->
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4.5 2L8.5 6L4.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
     </div>
 
     <div class="gesture-list">
@@ -896,7 +693,18 @@
 
     </div><!-- end gesture-list -->
 
-    
+    <!-- Watermarks -->
+    <div id="watermarks">
+      <a class="wm-link" href="https://www.instagram.com/_whois._.adii" target="_blank" rel="noopener">
+        <span class="wm-dot"></span>@_whois._.adii
+      </a>
+      <a class="wm-link" href="https://www.instagram.com/aadi.devx" target="_blank" rel="noopener">
+        <span class="wm-dot"></span>@aadi.devx
+      </a>
+    </div>
+
+  </aside>
+</div><!-- end app -->
 
 <script type="module">
   import * as THREE from 'three';
@@ -904,6 +712,7 @@
   import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
   import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
+  // ── THREE SETUP ──
   const canvas = document.getElementById('three-canvas');
   const scene = new THREE.Scene();
   const cam3 = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -1011,11 +820,7 @@
 
     // Activate card
     document.querySelectorAll('.gesture-card').forEach(c => c.classList.remove('active'));
-    if (CARD_IDS[tech]) {
-      document.getElementById(CARD_IDS[tech])?.classList.add('active');
-      // Also highlight in bottom sheet (IDs prefixed with 'sheet-')
-      document.getElementById('sheet-' + CARD_IDS[tech])?.classList.add('active');
-    }
+    if (CARD_IDS[tech]) document.getElementById(CARD_IDS[tech]).classList.add('active');
 
     triggerFlash();
 
@@ -1122,41 +927,12 @@
   function togglePanel() {
     document.getElementById('side-panel').classList.toggle('open');
   }
-
-  function openSheet() {
-    document.getElementById('bottom-sheet').classList.add('open');
-    document.getElementById('sheet-overlay').classList.add('open');
-    document.body.style.overflow = 'hidden';
+  function collapsePanel() {
+    const panel = document.getElementById('side-panel');
+    const app   = document.getElementById('app');
+    panel.classList.toggle('collapsed');
+    app.classList.toggle('panel-hidden');
   }
-
-  function closeSheet() {
-    document.getElementById('bottom-sheet').classList.remove('open');
-    document.getElementById('sheet-overlay').classList.remove('open');
-    document.body.style.overflow = '';
-  }
-
-  // Clone gesture cards into the bottom sheet on load
-  document.addEventListener('DOMContentLoaded', () => {
-    const gestureList = document.querySelector('.gesture-list');
-    const sheetList   = document.getElementById('sheet-list');
-    if (gestureList && sheetList) {
-      sheetList.innerHTML = gestureList.innerHTML;
-      // Prefix IDs to avoid duplicates
-      sheetList.querySelectorAll('[id]').forEach(el => {
-        el.id = 'sheet-' + el.id;
-      });
-    }
-
-    // Touch swipe-down to close sheet
-    let startY = 0;
-    const sheet = document.getElementById('bottom-sheet');
-    sheet.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
-    sheet.addEventListener('touchend', e => {
-      const dy = e.changedTouches[0].clientY - startY;
-      if (dy > 60) closeSheet();
-    }, { passive: true });
-  });
 </script>
 </body>
-  </html>
-    
+</html>
