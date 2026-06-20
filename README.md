@@ -1,6 +1,6 @@
 # 呪術廻戦 — JJK Cursed Technique
 > A real-time hand-tracking web experience inspired by Jujutsu Kaisen.  
-> Built by [@_whois._.adii](https://www.instagram.com/_whois._.adii) • [@aadi.devx](https://www.instagram.com/aadi.devx)
+> Built by [@_.phobicc._.adii](https://www.instagram.com/_.phobicc._.adii) • [@aadi.devx](https://www.instagram.com/aadi.devx)
 
 ---
 
